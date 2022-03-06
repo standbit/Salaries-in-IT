@@ -36,10 +36,19 @@ def show_vacancies_num():
         response = get_it_vacancies(language)
         vacancies_num[language] = response["found"]
     pprint(vacancies_num)
+    return
+
+
+def show_python_salaries(response):
+    for counter, vacancy in enumerate(response["items"]):
+        print(counter, vacancy["salary"])
+    return 
 
 
 def main():
-    show_vacancies_num()
+    response = get_it_vacancies("python")
+    write_json_file(response)
+    show_python_salaries(response)
 
 
 if __name__ == "__main__":
