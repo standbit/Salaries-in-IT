@@ -45,10 +45,27 @@ def show_python_salaries(response):
     return 
 
 
+def predict_rub_salary(vacancy):
+    if vacancy["salary"]:
+        if vacancy["salary"]["currency"] != "RUR":
+            return None
+        elif vacancy["salary"]["from"] and vacancy["salary"]["to"]:
+            predict_salary = (int(vacancy["salary"]["from"]) + int(vacancy["salary"]["to"]))/2
+            return predict_salary
+        elif vacancy["salary"]["from"]:
+             predict_salary = int(vacancy["salary"]["from"]) * 1.2
+             return predict_salary
+        else:
+            predict_salary = int(vacancy["salary"]["to"]) * 0.8
+            return predict_salary
+    return
+
+
 def main():
     response = get_it_vacancies("python")
     write_json_file(response)
-    show_python_salaries(response)
+    for vacancy in response["items"]:
+        print(predict_rub_salary(vacancy))
 
 
 if __name__ == "__main__":
