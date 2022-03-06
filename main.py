@@ -1,18 +1,18 @@
+from urllib import response
 import requests
 from pprint import pprint
 import json
 
 
-def get_it_vacancies():
+def get_it_vacancies(language):
     url = "https://api.hh.ru/vacancies"
     params = {
         "text": "Программист",
-        "text": "Разработчик",
+        "text": language,
         "area": 1,
         "date_from": "2022-02-07"    
     }
     response = requests.get(url, params=params)
-    print(response.url)
     converted_response = response.json()
     return converted_response
 
@@ -29,9 +29,17 @@ def read_json_file(json_file):
         return content
 
 
+def show_vacancies_num():
+    languages = ["Java", "C++", "Python", "Javascript", "Go", "Ruby", "Swift", "PHP"]
+    vacancies_num = {}
+    for language in languages:
+        response = get_it_vacancies(language)
+        vacancies_num[language] = response["found"]
+    pprint(vacancies_num)
+
+
 def main():
-    job_response = get_it_vacancies()
-    write_json_file(job_response)
+    show_vacancies_num()
 
 
 if __name__ == "__main__":
