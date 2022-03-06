@@ -8,7 +8,8 @@ def get_it_vacancies():
     params = {
         "text": "Программист",
         "text": "Разработчик",
-        "area": 2
+        "area": 1,
+        "date_from": "2022-02-07"    
     }
     response = requests.get(url, params=params)
     print(response.url)
