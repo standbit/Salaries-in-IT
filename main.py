@@ -62,10 +62,25 @@ def predict_rub_salary(vacancy):
 
 
 def main():
-    response = get_it_vacancies("python")
-    write_json_file(response)
-    for vacancy in response["items"]:
-        print(predict_rub_salary(vacancy))
+    languages = ["Java", "C++", "Python", "Javascript", "Go", "Ruby", "Swift", "PHP"]
+    salary_resume = {}
+    for language in languages:
+        response = get_it_vacancies(language)
+        vacancies_found = response["found"]
+        salary_sum = 0
+        vacancies_processed = 0
+        for vacancy in response["items"]:
+            salary = predict_rub_salary(vacancy)
+            if salary:
+                salary_sum += salary
+                vacancies_processed += 1
+        average_salary = int(salary_sum/vacancies_processed)
+        salary_resume[language] = {
+            "vacancies_found": vacancies_found,
+            "vacancies_processed": vacancies_processed,
+            "average_salary": average_salary
+        }
+    pprint(salary_resume)
 
 
 if __name__ == "__main__":
