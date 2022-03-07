@@ -3,6 +3,8 @@ import requests
 from pprint import pprint
 import json
 from itertools import count
+import os
+from dotenv import load_dotenv
 
 
 def get_it_vacancies(language):
@@ -71,26 +73,29 @@ def predict_rub_salary(vacancy):
 
 
 def main():
-    languages = ["Java", "C++", "Python", "Javascript", "Go", "Ruby", "Swift", "PHP"]
-    salary_resume = {}
-    for language in languages:
-        response = get_it_vacancies(language)
-        vacancies_found = response[0]["found"]
-        salary_sum = 0
-        vacancies_processed = 0
-        for page in response:
-            for vacancy in page["items"]:
-                salary = predict_rub_salary(vacancy)
-                if salary:
-                    salary_sum += salary
-                    vacancies_processed += 1
-            average_salary = int(salary_sum/vacancies_processed)
-            salary_resume[language] = {
-                "vacancies_found": vacancies_found,
-                "vacancies_processed": vacancies_processed,
-                "average_salary": average_salary
-                }
-    pprint(salary_resume)
+    # languages = ["Java", "C++", "Python", "Javascript", "Go", "Ruby", "Swift", "PHP"]
+    # salary_resume = {}
+    # for language in languages:
+    #     response = get_it_vacancies(language)
+    #     vacancies_found = response[0]["found"]
+    #     salary_sum = 0
+    #     vacancies_processed = 0
+    #     for page in response:
+    #         for vacancy in page["items"]:
+    #             salary = predict_rub_salary(vacancy)
+    #             if salary:
+    #                 salary_sum += salary
+    #                 vacancies_processed += 1
+    #         average_salary = int(salary_sum/vacancies_processed)
+    #         salary_resume[language] = {
+    #             "vacancies_found": vacancies_found,
+    #             "vacancies_processed": vacancies_processed,
+    #             "average_salary": average_salary
+    #             }
+    # pprint(salary_resume)
+    load_dotenv()
+    secret_key = os.getenv("SUPERJOB_KEY")
+    print(secret_key)
 
 
 if __name__ == "__main__":
