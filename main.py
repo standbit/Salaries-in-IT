@@ -1,3 +1,4 @@
+from email import header
 from urllib import response
 import requests
 from pprint import pprint
@@ -5,6 +6,8 @@ import json
 from itertools import count
 import os
 from dotenv import load_dotenv
+import ciso8601
+import time
 
 
 def get_it_vacancies(language):
@@ -28,16 +31,16 @@ def get_it_vacancies(language):
     return all_vacancies
 
 
-# def write_json_file(response):
-#     with open("response.json", "w") as outfile:
-#         json.dump(response, outfile, indent=4, ensure_ascii=False)
+def write_json_file(response):
+    with open("response2.json", "w") as outfile:
+        json.dump(response, outfile, indent=4, ensure_ascii=False)
 
 
-# def read_json_file(json_file):
-#     with open(json_file, "r") as file:
-#         file_contents = file.read()
-#         content = json.loads(file_contents)
-#         return content
+def read_json_file(json_file):
+    with open(json_file, "r") as file:
+        file_contents = file.read()
+        content = json.loads(file_contents)
+        return content
 
 
 # def show_vacancies_num():
@@ -72,6 +75,25 @@ def predict_rub_salary(vacancy):
     return
 
 
+def get_sj_vacancies():
+    secret_key = os.getenv("SUPERJOB_KEY")
+    published_from_date = "2022-02-07"
+    converted_date = ciso8601.parse_datetime(published_from_date)
+    unix_time = int(time.mktime(converted_date.timetuple()))
+    header = {
+        "X-Api-App-Id": secret_key
+    }
+    payload = {
+        "date_published_from": unix_time,
+        "town": "Москва",
+        }
+    url = "https://api.superjob.ru/2.0/vacancies/"
+    response = requests.get(url, headers=header, params=payload)
+    response.raise_for_status()
+    converted_response = response.json()
+    return converted_response
+
+
 def main():
     # languages = ["Java", "C++", "Python", "Javascript", "Go", "Ruby", "Swift", "PHP"]
     # salary_resume = {}
@@ -94,8 +116,10 @@ def main():
     #             }
     # pprint(salary_resume)
     load_dotenv()
-    secret_key = os.getenv("SUPERJOB_KEY")
-    print(secret_key)
+    response = get_sj_vacancies()
+    for vacancy in response["objects"]:
+        print(vacancy["profession"])
+    write_json_file(response)
 
 
 if __name__ == "__main__":
