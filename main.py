@@ -1,31 +1,29 @@
-import requests
-from pprint import pprint
-import json
-from itertools import count
 import os
-from dotenv import load_dotenv
-import ciso8601
 import time
+from itertools import count
 
+import ciso8601
+import requests
+from dotenv import load_dotenv
 from terminaltables import SingleTable
 
 
 def get_hh_vacancies(language):
     url = "https://api.hh.ru/vacancies"
     all_vacancies = []
+    published_from_date = "2022-02-07"
     for page in count(0):
         payload = {
-            "text": "Программист",
-            "text": language,
+            "text": f"Программист {language}",
             "area": 1,
-            "date_from": "2022-02-07",
+            "date_from": published_from_date,
             "page": page
             }
         page_response = requests.get(url, params=payload)
         page_response.raise_for_status()
         page_content = page_response.json()
-        page_limit = page_content["pages"] -1 
-        if page >= page_limit:    # потому что вылазила ошибка, когда page=100
+        page_limit = page_content["pages"] - 1
+        if page >= page_limit:
             break
         all_vacancies.append(page_content)
     return all_vacancies
@@ -53,27 +51,15 @@ def get_sj_vacancies(language):
         page_response.raise_for_status()
         page_content = page_response.json()
         page_limit = page_content["more"]
-        if not page_limit:    # если more=False,то останавливаем цикл
+        if not page_limit:
             break
         all_vacancies.append(page_content)
     return all_vacancies
 
 
-# def write_json_file(response):
-#     with open("response3.json", "w") as outfile:
-#         json.dump(response, outfile, indent=4, ensure_ascii=False)
-
-
-# def read_json_file(json_file):
-#     with open(json_file, "r") as file:
-#         file_contents = file.read()
-#         content = json.loads(file_contents)
-#         return content
-
-
 def predict_salary(salary_from, salary_to):
     if salary_from == 0 and salary_to == 0:
-        return 
+        return
     elif salary_from == 0 or salary_from is None:
         predict_salary = salary_to * 0.8
         return predict_salary
@@ -83,7 +69,7 @@ def predict_salary(salary_from, salary_to):
     else:
         predict_salary = (salary_from + salary_to)/2
         return predict_salary
- 
+
 
 def predict_hh_salary(vacancy):
     if vacancy["salary"]:
@@ -107,7 +93,16 @@ def predict_sj_salary(vacancy):
 
 
 def get_hh_salary_statistics():
-    languages = ["Java", "C++", "Python", "Javascript", "Go", "Ruby", "Swift", "PHP"]
+    languages = [
+        "Java",
+        "C++",
+        "Python",
+        "Javascript",
+        "Go",
+        "Ruby",
+        "Swift",
+        "PHP"
+        ]
     salary_statistics = {}
     for language in languages:
         response = get_hh_vacancies(language)
@@ -137,7 +132,16 @@ def get_hh_salary_statistics():
 
 
 def get_sj_salary_statistics():
-    languages = ["Java", "C++", "Python", "Javascript", "Go", "Ruby", "Swift", "PHP"]
+    languages = [
+        "Java",
+        "C++",
+        "Python",
+        "Javascript",
+        "Go",
+        "Ruby",
+        "Swift",
+        "PHP"
+        ]
     salary_statistics = {}
     for language in languages:
         response = get_sj_vacancies(language)
@@ -165,11 +169,21 @@ def get_sj_salary_statistics():
                     }
     return salary_statistics
 
+
 def create_table(company_salaries, title):
     data = []
-    data.append(["Язык программирования", "Вакансий найдено", "Вакансий обработано", "Средняя зарплата"])
+    data.append([
+        "Язык программирования",
+        "Вакансий найдено",
+        "Вакансий обработано",
+        "Средняя зарплата"])
     for key, value in company_salaries.items():
-        data.append([key, value["vacancies_found"], value["vacancies_processed"], value["average_salary"]])
+        data.append([
+            key,
+            value["vacancies_found"],
+            value["vacancies_processed"],
+            value["average_salary"]
+            ])
     table_instance = SingleTable(data, title)
     return table_instance
 
