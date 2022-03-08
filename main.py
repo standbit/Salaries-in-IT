@@ -8,7 +8,7 @@ import ciso8601
 import time
 
 
-def get_it_vacancies(language):
+def get_hh_vacancies(language):
     url = "https://api.hh.ru/vacancies"
     all_vacancies = []
     for page in count(0):
@@ -29,8 +29,36 @@ def get_it_vacancies(language):
     return all_vacancies
 
 
+def get_sj_vacancies(language):
+    secret_key = os.getenv("SUPERJOB_KEY")
+    url = "https://api.superjob.ru/2.0/vacancies/"
+    all_vacancies = []
+    published_from_date = "2022-02-07"
+    converted_date = ciso8601.parse_datetime(published_from_date)
+    unix_time = int(time.mktime(converted_date.timetuple()))
+    for page in count(0):
+        header = {
+            "X-Api-App-Id": secret_key
+        }
+        payload = {
+            "date_published_from": unix_time,
+            "town": 4,
+            "catalogues": 48,
+            "keyword": language,
+            "page": page,
+            }
+        page_response = requests.get(url, headers=header, params=payload)
+        page_response.raise_for_status()
+        page_content = page_response.json()
+        page_limit = page_content["more"]
+        if not page_limit:    # если more=False,то останавливаем цикл
+            break
+        all_vacancies.append(page_content)
+    return all_vacancies
+
+
 def write_json_file(response):
-    with open("response2.json", "w") as outfile:
+    with open("response3.json", "w") as outfile:
         json.dump(response, outfile, indent=4, ensure_ascii=False)
 
 
@@ -41,83 +69,68 @@ def read_json_file(json_file):
         return content
 
 
-# def show_vacancies_num():
-#     languages = ["Java", "C++", "Python", "Javascript", "Go", "Ruby", "Swift", "PHP"]
-#     vacancies_num = {}
-#     for language in languages:
-#         response = get_it_vacancies(language)
-#         vacancies_num[language] = response["found"]
-#     pprint(vacancies_num)
+# def predict_rub_salary(vacancy):
+#     if vacancy["salary"]:
+#         if vacancy["salary"]["currency"] != "RUR":
+#             return None
+#         elif vacancy["salary"]["from"] and vacancy["salary"]["to"]:
+#             predict_salary = (int(vacancy["salary"]["from"]) + int(vacancy["salary"]["to"]))/2
+#             return predict_salary
+#         elif vacancy["salary"]["from"]:
+#              predict_salary = int(vacancy["salary"]["from"]) * 1.2
+#              return predict_salary
+#         else:
+#             predict_salary = int(vacancy["salary"]["to"]) * 0.8
+#             return predict_salary
 #     return
 
 
-# def show_python_salaries(response):
-#     for counter, vacancy in enumerate(response["items"]):
-#         print(counter, vacancy["salary"])
-#     return 
-
-
-def predict_rub_salary(vacancy):
-    if vacancy["salary"]:
-        if vacancy["salary"]["currency"] != "RUR":
-            return None
-        elif vacancy["salary"]["from"] and vacancy["salary"]["to"]:
-            predict_salary = (int(vacancy["salary"]["from"]) + int(vacancy["salary"]["to"]))/2
-            return predict_salary
-        elif vacancy["salary"]["from"]:
-             predict_salary = int(vacancy["salary"]["from"]) * 1.2
-             return predict_salary
-        else:
-            predict_salary = int(vacancy["salary"]["to"]) * 0.8
-            return predict_salary
-    return
-
-
-def get_sj_vacancies():
-    secret_key = os.getenv("SUPERJOB_KEY")
-    published_from_date = "2022-02-07"
-    converted_date = ciso8601.parse_datetime(published_from_date)
-    unix_time = int(time.mktime(converted_date.timetuple()))
-    header = {
-        "X-Api-App-Id": secret_key
-    }
-    payload = {
-        "date_published_from": unix_time,
-        "town": 4,
-        "catalogues": 48,
-        }
-    url = "https://api.superjob.ru/2.0/vacancies/"
-    response = requests.get(url, headers=header, params=payload)
-    response.raise_for_status()
-    converted_response = response.json()
-    return converted_response
+# def get_sj_vacancies():
+#     secret_key = os.getenv("SUPERJOB_KEY")
+#     published_from_date = "2022-02-07"
+#     converted_date = ciso8601.parse_datetime(published_from_date)
+#     unix_time = int(time.mktime(converted_date.timetuple()))
+#     header = {
+#         "X-Api-App-Id": secret_key
+#     }
+#     payload = {
+#         "date_published_from": unix_time,
+#         "town": 4,
+#         "catalogues": 48,
+#         }
+#     url = "https://api.superjob.ru/2.0/vacancies/"
+#     response = requests.get(url, headers=header, params=payload)
+#     response.raise_for_status()
+#     converted_response = response.json()
+#     return converted_response
 
 
 def predict_salary(salary_from, salary_to):
     if salary_from == 0 and salary_to == 0:
         return 
     elif salary_from == 0 or salary_from is None:
-        predict_salary = int(salary_to) * 0.8
+        predict_salary = salary_to * 0.8
         return predict_salary
     elif salary_to == 0 or salary_to is None:
-        predict_salary = int(salary_from) * 1.2
+        predict_salary = salary_from * 1.2
         return predict_salary
     else:
-        predict_salary = (int(salary_from) + int(salary_to))/2
+        predict_salary = (salary_from + salary_to)/2
         return predict_salary
  
 
-def predict_rub_salary_hh(vacancy):
+def predict_hh_salary(vacancy):
     if vacancy["salary"]:
         if vacancy["salary"]["currency"] != "RUR":
             return
         else:
-            salary_from = vacancy["salary"]["from"]
-            salary_to = vacancy["salary"]["to"]
-            predict_salary(salary_from, salary_to)
+            salary_from = int(vacancy["salary"]["from"])
+            salary_to = int(vacancy["salary"]["to"])
+            predicted_salary = predict_salary(salary_from, salary_to)
+            return predicted_salary
 
 
-def predict_rub_salary_sj(vacancy):
+def predict_sj_salary(vacancy):
     if vacancy["currency"] != "rub":
         return
     else:
@@ -127,32 +140,63 @@ def predict_rub_salary_sj(vacancy):
         return predicted_salary
 
 
+def get_hh_salary_statistics():
+    languages = ["Java", "C++", "Python", "Javascript", "Go", "Ruby", "Swift", "PHP"]
+    salary_statistics = {}
+    for language in languages:
+        response = get_hh_vacancies(language)
+        vacancies_found = response[0]["found"]
+        salary_sum = 0
+        vacancies_processed = 0
+        for page in response:
+            for vacancy in page["items"]:
+                salary = predict_hh_salary(vacancy)
+                if salary:
+                    salary_sum += salary
+                    vacancies_processed += 1
+            average_salary = int(salary_sum/vacancies_processed)
+            salary_statistics[language] = {
+                "vacancies_found": vacancies_found,
+                "vacancies_processed": vacancies_processed,
+                "average_salary": average_salary
+                }
+    return salary_statistics
+
+
+def get_sj_salary_statistics():
+    languages = ["Java", "C++", "Python", "Javascript", "Go", "Ruby", "Swift", "PHP"]
+    salary_statistics = {}
+    for language in languages:
+        response = get_sj_vacancies(language)
+        if not response:
+            salary_statistics[language] = {
+                "vacancies_found": 0,
+                "vacancies_processed": 0,
+                "average_salary": 0
+                }
+        else:
+            vacancies_found = response[0]["total"]
+            salary_sum = 0
+            vacancies_processed = 0
+            for page in response:
+                for vacancy in page["objects"]:
+                    salary = predict_sj_salary(vacancy)
+                    if salary:
+                        salary_sum += salary
+                        vacancies_processed += 1
+                average_salary = int(salary_sum/vacancies_processed)
+                salary_statistics[language] = {
+                    "vacancies_found": vacancies_found,
+                    "vacancies_processed": vacancies_processed,
+                    "average_salary": average_salary
+                    }
+    return salary_statistics
+
+
 def main():
-    # languages = ["Java", "C++", "Python", "Javascript", "Go", "Ruby", "Swift", "PHP"]
-    # salary_resume = {}
-    # for language in languages:
-    #     response = get_it_vacancies(language)
-    #     vacancies_found = response[0]["found"]
-    #     salary_sum = 0
-    #     vacancies_processed = 0
-    #     for page in response:
-    #         for vacancy in page["items"]:
-    #             salary = predict_rub_salary(vacancy)
-    #             if salary:
-    #                 salary_sum += salary
-    #                 vacancies_processed += 1
-    #         average_salary = int(salary_sum/vacancies_processed)
-    #         salary_resume[language] = {
-    #             "vacancies_found": vacancies_found,
-    #             "vacancies_processed": vacancies_processed,
-    #             "average_salary": average_salary
-    #             }
-    # pprint(salary_resume)
     load_dotenv()
-    response = get_sj_vacancies()
-    for vacancy in response["objects"]:
-        print(vacancy["profession"], vacancy["town"]["title"], predict_rub_salary_sj(vacancy), sep=", ")
-    write_json_file(response)
+    sj_salary_statistics = get_sj_salary_statistics()
+    pprint(sj_salary_statistics)
 
 
 if __name__ == "__main__":
