@@ -176,17 +176,15 @@ def create_table(company_salaries, title):
 
 def main():
     load_dotenv()
+    hh_salary_statistics = get_hh_salary_statistics()
+    hh_title = "HeadHunter Moscow"
+    table_instance = create_table(hh_salary_statistics, hh_title)
+    print(table_instance.table)
+    print()
     sj_salary_statistics = get_sj_salary_statistics()
     sj_title = "SuperJob Moscow"
     table_instance = create_table(sj_salary_statistics, sj_title)
     print(table_instance.table)
-    print()
-    # hh_salary_statistics = get_hh_salary_statistics()
-    # title = "HeadHunter Moscow"
-    # data = fill_rows_in_table(hh_salary_statistics)
-    # table_instance = SingleTable(data, title)
-    # print(table_instance.table)
-    # print()
 
 
 if __name__ == "__main__":
