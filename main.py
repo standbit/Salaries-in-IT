@@ -1,6 +1,3 @@
-from email import header
-from re import M
-from urllib import response
 import requests
 from pprint import pprint
 import json
@@ -96,6 +93,40 @@ def get_sj_vacancies():
     return converted_response
 
 
+def predict_salary(salary_from, salary_to):
+    if salary_from == 0 and salary_to == 0:
+        return 
+    elif salary_from == 0 or salary_from is None:
+        predict_salary = int(salary_to) * 0.8
+        return predict_salary
+    elif salary_to == 0 or salary_to is None:
+        predict_salary = int(salary_from) * 1.2
+        return predict_salary
+    else:
+        predict_salary = (int(salary_from) + int(salary_to))/2
+        return predict_salary
+ 
+
+def predict_rub_salary_hh(vacancy):
+    if vacancy["salary"]:
+        if vacancy["salary"]["currency"] != "RUR":
+            return
+        else:
+            salary_from = vacancy["salary"]["from"]
+            salary_to = vacancy["salary"]["to"]
+            predict_salary(salary_from, salary_to)
+
+
+def predict_rub_salary_sj(vacancy):
+    if vacancy["currency"] != "rub":
+        return
+    else:
+        salary_from = int(vacancy["payment_from"])
+        salary_to = int(vacancy["payment_to"])
+        predicted_salary = predict_salary(salary_from, salary_to)
+        return predicted_salary
+
+
 def main():
     # languages = ["Java", "C++", "Python", "Javascript", "Go", "Ruby", "Swift", "PHP"]
     # salary_resume = {}
@@ -120,7 +151,7 @@ def main():
     load_dotenv()
     response = get_sj_vacancies()
     for vacancy in response["objects"]:
-        print(vacancy["profession"], vacancy["town"]["title"], sep=", ")
+        print(vacancy["profession"], vacancy["town"]["title"], predict_rub_salary_sj(vacancy), sep=", ")
     write_json_file(response)
 
 
