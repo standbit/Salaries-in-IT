@@ -7,6 +7,8 @@ from dotenv import load_dotenv
 import ciso8601
 import time
 
+from terminaltables import SingleTable
+
 
 def get_hh_vacancies(language):
     url = "https://api.hh.ru/vacancies"
@@ -57,52 +59,16 @@ def get_sj_vacancies(language):
     return all_vacancies
 
 
-def write_json_file(response):
-    with open("response3.json", "w") as outfile:
-        json.dump(response, outfile, indent=4, ensure_ascii=False)
+# def write_json_file(response):
+#     with open("response3.json", "w") as outfile:
+#         json.dump(response, outfile, indent=4, ensure_ascii=False)
 
 
-def read_json_file(json_file):
-    with open(json_file, "r") as file:
-        file_contents = file.read()
-        content = json.loads(file_contents)
-        return content
-
-
-# def predict_rub_salary(vacancy):
-#     if vacancy["salary"]:
-#         if vacancy["salary"]["currency"] != "RUR":
-#             return None
-#         elif vacancy["salary"]["from"] and vacancy["salary"]["to"]:
-#             predict_salary = (int(vacancy["salary"]["from"]) + int(vacancy["salary"]["to"]))/2
-#             return predict_salary
-#         elif vacancy["salary"]["from"]:
-#              predict_salary = int(vacancy["salary"]["from"]) * 1.2
-#              return predict_salary
-#         else:
-#             predict_salary = int(vacancy["salary"]["to"]) * 0.8
-#             return predict_salary
-#     return
-
-
-# def get_sj_vacancies():
-#     secret_key = os.getenv("SUPERJOB_KEY")
-#     published_from_date = "2022-02-07"
-#     converted_date = ciso8601.parse_datetime(published_from_date)
-#     unix_time = int(time.mktime(converted_date.timetuple()))
-#     header = {
-#         "X-Api-App-Id": secret_key
-#     }
-#     payload = {
-#         "date_published_from": unix_time,
-#         "town": 4,
-#         "catalogues": 48,
-#         }
-#     url = "https://api.superjob.ru/2.0/vacancies/"
-#     response = requests.get(url, headers=header, params=payload)
-#     response.raise_for_status()
-#     converted_response = response.json()
-#     return converted_response
+# def read_json_file(json_file):
+#     with open(json_file, "r") as file:
+#         file_contents = file.read()
+#         content = json.loads(file_contents)
+#         return content
 
 
 def predict_salary(salary_from, salary_to):
@@ -124,8 +90,8 @@ def predict_hh_salary(vacancy):
         if vacancy["salary"]["currency"] != "RUR":
             return
         else:
-            salary_from = int(vacancy["salary"]["from"])
-            salary_to = int(vacancy["salary"]["to"])
+            salary_from = vacancy["salary"]["from"]
+            salary_to = vacancy["salary"]["to"]
             predicted_salary = predict_salary(salary_from, salary_to)
             return predicted_salary
 
@@ -134,8 +100,8 @@ def predict_sj_salary(vacancy):
     if vacancy["currency"] != "rub":
         return
     else:
-        salary_from = int(vacancy["payment_from"])
-        salary_to = int(vacancy["payment_to"])
+        salary_from = vacancy["payment_from"]
+        salary_to = vacancy["payment_to"]
         predicted_salary = predict_salary(salary_from, salary_to)
         return predicted_salary
 
@@ -145,21 +111,28 @@ def get_hh_salary_statistics():
     salary_statistics = {}
     for language in languages:
         response = get_hh_vacancies(language)
-        vacancies_found = response[0]["found"]
-        salary_sum = 0
-        vacancies_processed = 0
-        for page in response:
-            for vacancy in page["items"]:
-                salary = predict_hh_salary(vacancy)
-                if salary:
-                    salary_sum += salary
-                    vacancies_processed += 1
-            average_salary = int(salary_sum/vacancies_processed)
+        if not response:
             salary_statistics[language] = {
-                "vacancies_found": vacancies_found,
-                "vacancies_processed": vacancies_processed,
-                "average_salary": average_salary
+                "vacancies_found": 0,
+                "vacancies_processed": 0,
+                "average_salary": 0
                 }
+        else:
+            vacancies_found = response[0]["found"]
+            salary_sum = 0
+            vacancies_processed = 0
+            for page in response:
+                for vacancy in page["items"]:
+                    salary = predict_hh_salary(vacancy)
+                    if salary:
+                        salary_sum += salary
+                        vacancies_processed += 1
+                average_salary = int(salary_sum/vacancies_processed)
+                salary_statistics[language] = {
+                    "vacancies_found": vacancies_found,
+                    "vacancies_processed": vacancies_processed,
+                    "average_salary": average_salary
+                    }
     return salary_statistics
 
 
@@ -192,11 +165,28 @@ def get_sj_salary_statistics():
                     }
     return salary_statistics
 
+def create_table(company_salaries, title):
+    data = []
+    data.append(["Язык программирования", "Вакансий найдено", "Вакансий обработано", "Средняя зарплата"])
+    for key, value in company_salaries.items():
+        data.append([key, value["vacancies_found"], value["vacancies_processed"], value["average_salary"]])
+    table_instance = SingleTable(data, title)
+    return table_instance
+
 
 def main():
     load_dotenv()
     sj_salary_statistics = get_sj_salary_statistics()
-    pprint(sj_salary_statistics)
+    sj_title = "SuperJob Moscow"
+    table_instance = create_table(sj_salary_statistics, sj_title)
+    print(table_instance.table)
+    print()
+    # hh_salary_statistics = get_hh_salary_statistics()
+    # title = "HeadHunter Moscow"
+    # data = fill_rows_in_table(hh_salary_statistics)
+    # table_instance = SingleTable(data, title)
+    # print(table_instance.table)
+    # print()
 
 
 if __name__ == "__main__":
