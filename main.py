@@ -1,4 +1,5 @@
 from email import header
+from re import M
 from urllib import response
 import requests
 from pprint import pprint
@@ -85,7 +86,8 @@ def get_sj_vacancies():
     }
     payload = {
         "date_published_from": unix_time,
-        "town": "Москва",
+        "town": 4,
+        "catalogues": 48,
         }
     url = "https://api.superjob.ru/2.0/vacancies/"
     response = requests.get(url, headers=header, params=payload)
@@ -118,7 +120,7 @@ def main():
     load_dotenv()
     response = get_sj_vacancies()
     for vacancy in response["objects"]:
-        print(vacancy["profession"])
+        print(vacancy["profession"], vacancy["town"]["title"], sep=", ")
     write_json_file(response)
 
 
