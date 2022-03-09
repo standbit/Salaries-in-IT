@@ -8,15 +8,32 @@ from dotenv import load_dotenv
 from terminaltables import SingleTable
 
 
+LANGUAGES = [
+        "Java",
+        "C++",
+        "Python",
+        "Javascript",
+        "Go",
+        "Ruby",
+        "Swift",
+        "PHP"
+        ]
+PUBLISHED_FROM_DATE = "2022-02-07"
+NO_VACANCIES_FOUND = {
+    "vacancies_found": 0,
+    "vacancies_processed": 0,
+    "average_salary": 0
+    }
+
+
 def get_hh_vacancies(language):
     url = "https://api.hh.ru/vacancies"
     all_vacancies = []
-    published_from_date = "2022-02-07"
     for page in count(0):
         payload = {
             "text": f"Программист {language}",
             "area": 1,
-            "date_from": published_from_date,
+            "date_from": PUBLISHED_FROM_DATE,
             "page": page
             }
         page_response = requests.get(url, params=payload)
@@ -33,8 +50,7 @@ def get_sj_vacancies(language):
     secret_key = os.getenv("SUPERJOB_KEY")
     url = "https://api.superjob.ru/2.0/vacancies/"
     all_vacancies = []
-    published_from_date = "2022-02-07"
-    converted_date = ciso8601.parse_datetime(published_from_date)
+    converted_date = ciso8601.parse_datetime(PUBLISHED_FROM_DATE)
     unix_time = int(time.mktime(converted_date.timetuple()))
     for page in count(0):
         header = {
@@ -58,12 +74,12 @@ def get_sj_vacancies(language):
 
 
 def predict_salary(salary_from, salary_to):
-    if salary_from == 0 and salary_to == 0:
+    if not salary_from and not salary_to:
         return
-    elif salary_from == 0 or salary_from is None:
+    elif not salary_from:
         predict_salary = salary_to * 0.8
         return predict_salary
-    elif salary_to == 0 or salary_to is None:
+    elif not salary_to:
         predict_salary = salary_from * 1.2
         return predict_salary
     else:
@@ -93,25 +109,11 @@ def predict_sj_salary(vacancy):
 
 
 def get_hh_salary_statistics():
-    languages = [
-        "Java",
-        "C++",
-        "Python",
-        "Javascript",
-        "Go",
-        "Ruby",
-        "Swift",
-        "PHP"
-        ]
     salary_statistics = {}
-    for language in languages:
+    for language in LANGUAGES:
         response = get_hh_vacancies(language)
         if not response:
-            salary_statistics[language] = {
-                "vacancies_found": 0,
-                "vacancies_processed": 0,
-                "average_salary": 0
-                }
+            salary_statistics[language] = NO_VACANCIES_FOUND
         else:
             vacancies_found = response[0]["found"]
             salary_sum = 0
@@ -132,25 +134,11 @@ def get_hh_salary_statistics():
 
 
 def get_sj_salary_statistics():
-    languages = [
-        "Java",
-        "C++",
-        "Python",
-        "Javascript",
-        "Go",
-        "Ruby",
-        "Swift",
-        "PHP"
-        ]
     salary_statistics = {}
-    for language in languages:
+    for language in LANGUAGES:
         response = get_sj_vacancies(language)
         if not response:
-            salary_statistics[language] = {
-                "vacancies_found": 0,
-                "vacancies_processed": 0,
-                "average_salary": 0
-                }
+            salary_statistics[language] = NO_VACANCIES_FOUND
         else:
             vacancies_found = response[0]["total"]
             salary_sum = 0
@@ -190,12 +178,17 @@ def create_table(company_salaries, title):
 
 def main():
     load_dotenv()
-    hh_salary_statistics = get_hh_salary_statistics()
+    try:
+        hh_salary_statistics = get_hh_salary_statistics()
+        sj_salary_statistics = get_sj_salary_statistics()
+    except requests.exceptions.HTTPError as err:
+        print("Can't get data from server:\n{0}".format(err))
+    except requests.ConnectionError as err:
+        print("Connection Error. Check Internet connection.\n", str(err))
     hh_title = "HeadHunter Moscow"
     table_instance = create_table(hh_salary_statistics, hh_title)
     print(table_instance.table)
     print()
-    sj_salary_statistics = get_sj_salary_statistics()
     sj_title = "SuperJob Moscow"
     table_instance = create_table(sj_salary_statistics, sj_title)
     print(table_instance.table)
