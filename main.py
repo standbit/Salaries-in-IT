@@ -90,21 +90,17 @@ def predict_hh_salary(vacancy):
     if vacancy["salary"]:
         if vacancy["salary"]["currency"] != "RUR":
             return
-        else:
-            salary_from = vacancy["salary"]["from"]
-            salary_to = vacancy["salary"]["to"]
-            predicted_salary = predict_salary(salary_from, salary_to)
-            return predicted_salary
+        salary_from = vacancy["salary"]["from"]
+        salary_to = vacancy["salary"]["to"]
+        return predict_salary(salary_from, salary_to)
 
 
 def predict_sj_salary(vacancy):
     if vacancy["currency"] != "rub":
         return
-    else:
-        salary_from = vacancy["payment_from"]
-        salary_to = vacancy["payment_to"]
-        predicted_salary = predict_salary(salary_from, salary_to)
-        return predicted_salary
+    salary_from = vacancy["payment_from"]
+    salary_to = vacancy["payment_to"]
+    return predict_salary(salary_from, salary_to)
 
 
 def get_hh_salary_statistics():
