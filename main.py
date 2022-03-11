@@ -46,8 +46,7 @@ def get_hh_vacancies(language):
     return all_vacancies
 
 
-def get_sj_vacancies(language):
-    secret_key = os.getenv("SUPERJOB_KEY")
+def get_sj_vacancies(language, secret_key):
     url = "https://api.superjob.ru/2.0/vacancies/"
     all_vacancies = []
     converted_date = ciso8601.parse_datetime(PUBLISHED_FROM_DATE)
@@ -133,10 +132,10 @@ def get_hh_salary_statistics():
     return salary_statistics
 
 
-def get_sj_salary_statistics():
+def get_sj_salary_statistics(secret_key):
     salary_statistics = {}
     for language in LANGUAGES:
-        response = get_sj_vacancies(language)
+        response = get_sj_vacancies(language, secret_key)
         if not response:
             salary_statistics[language] = NO_VACANCIES_FOUND
         else:
@@ -178,9 +177,10 @@ def create_table(company_salaries, title):
 
 def main():
     load_dotenv()
+    secret_key = os.getenv("SUPERJOB_KEY")
     try:
         hh_salary_statistics = get_hh_salary_statistics()
-        sj_salary_statistics = get_sj_salary_statistics()
+        sj_salary_statistics = get_sj_salary_statistics(secret_key)
     except requests.exceptions.HTTPError as err:
         print("Can't get data from server:\n{0}".format(err))
     except requests.ConnectionError as err:
