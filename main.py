@@ -158,12 +158,11 @@ def get_sj_salary_statistics(secret_key):
 
 
 def create_table(company_salaries, title):
-    data = []
-    data.append([
+    data = [[
         "Язык программирования",
         "Вакансий найдено",
         "Вакансий обработано",
-        "Средняя зарплата"])
+        "Средняя зарплата"]]
     for key, value in company_salaries.items():
         data.append([
             key,
