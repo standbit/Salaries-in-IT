@@ -28,7 +28,7 @@ NO_VACANCIES_FOUND = {
 
 def get_hh_vacancies(language):
     url = "https://api.hh.ru/vacancies"
-    all_vacancies = []
+    hh_vacancies = []
     for page in count(0):
         payload = {
             "text": f"Программист {language}",
@@ -42,13 +42,13 @@ def get_hh_vacancies(language):
         page_limit = page_content["pages"] - 1
         if page >= page_limit:
             break
-        all_vacancies.append(page_content)
-    return all_vacancies
+        hh_vacancies.append(page_content)
+    return hh_vacancies
 
 
 def get_sj_vacancies(language, secret_key):
     url = "https://api.superjob.ru/2.0/vacancies/"
-    all_vacancies = []
+    sj_vacancies = []
     converted_date = ciso8601.parse_datetime(PUBLISHED_FROM_DATE)
     unix_time = int(time.mktime(converted_date.timetuple()))
     for page in count(0):
@@ -68,8 +68,8 @@ def get_sj_vacancies(language, secret_key):
         page_limit = page_content["more"]
         if not page_limit:
             break
-        all_vacancies.append(page_content)
-    return all_vacancies
+        sj_vacancies.append(page_content)
+    return sj_vacancies
 
 
 def predict_salary(salary_from, salary_to):
@@ -102,14 +102,14 @@ def predict_sj_salary(vacancy):
 def get_hh_salary_statistics():
     salary_statistics = {}
     for language in LANGUAGES:
-        response = get_hh_vacancies(language)
-        if not response:
+        hh_vacancies = get_hh_vacancies(language)
+        if not hh_vacancies:
             salary_statistics[language] = NO_VACANCIES_FOUND
         else:
-            vacancies_found = response[0]["found"]
+            vacancies_found = hh_vacancies[0]["found"]
             salary_sum = 0
             vacancies_processed = 0
-            for page in response:
+            for page in hh_vacancies:
                 for vacancy in page["items"]:
                     salary = predict_hh_salary(vacancy)
                     if salary:
@@ -127,14 +127,14 @@ def get_hh_salary_statistics():
 def get_sj_salary_statistics(secret_key):
     salary_statistics = {}
     for language in LANGUAGES:
-        response = get_sj_vacancies(language, secret_key)
-        if not response:
+        sj_vacancies = get_sj_vacancies(language, secret_key)
+        if not sj_vacancies:
             salary_statistics[language] = NO_VACANCIES_FOUND
         else:
-            vacancies_found = response[0]["total"]
+            vacancies_found = sj_vacancies[0]["total"]
             salary_sum = 0
             vacancies_processed = 0
-            for page in response:
+            for page in sj_vacancies:
                 for vacancy in page["objects"]:
                     salary = predict_sj_salary(vacancy)
                     if salary:
