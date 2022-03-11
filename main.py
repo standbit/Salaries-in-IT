@@ -157,20 +157,20 @@ def get_sj_salary_statistics(secret_key):
     return salary_statistics
 
 
-def create_table(company_salaries, title):
-    data = [[
+def create_table(company_statistics, title):
+    statistics_table = [[
         "Язык программирования",
         "Вакансий найдено",
         "Вакансий обработано",
         "Средняя зарплата"]]
-    for key, value in company_salaries.items():
-        data.append([
+    for key, value in company_statistics.items():
+        statistics_table.append([
             key,
             value["vacancies_found"],
             value["vacancies_processed"],
             value["average_salary"]
             ])
-    table_instance = SingleTable(data, title)
+    table_instance = SingleTable(statistics_table, title)
     return table_instance
 
 
